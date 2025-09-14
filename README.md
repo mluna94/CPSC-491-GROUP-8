@@ -33,5 +33,5 @@ The app includes several different views:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/quizzy-app.git
-   cd quizzy-app
+   git clone https://github.com/mluna94/CPSC-491-GROUP-8.git
+  cd CPSC-491-GROUP-8/Quizzy
