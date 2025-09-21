@@ -26,6 +26,7 @@ The app includes several different views:
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
+- 
 
 ### Installation
 
@@ -33,3 +34,25 @@ The app includes several different views:
    ```bash
    git clone https://github.com/yourusername/quizzy-app.git
    cd quizzy-app
+# Install dependencies
+npm install
+# or
+yarn
+
+### Development
+# Start dev server
+npm start
+# or
+yarn start
+
+### Build
+# Create production build
+npm run build
+# or
+yarn build
+
+### Test
+# Run tests
+npm test
+# or
+yarn test
