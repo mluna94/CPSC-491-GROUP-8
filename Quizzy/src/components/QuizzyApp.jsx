@@ -10,13 +10,13 @@ const QuizzyApp = () => {
   const [uploadTab, setUploadTab] = useState('document');
 
   // Dynamic state that would be populated by actual logic
-  const [quizQuestions, setQuizQuestions] = useState([]);
-  const [trendingTopics, setTrendingTopics] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
+  const [quizQuestions, _setQuizQuestions] = useState([]);
+  const [trendingTopics, _setTrendingTopics] = useState([]);
+  const [recentActivity, _setRecentActivity] = useState([]);
   const [userNotes, setUserNotes] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [totalQuizzes, setTotalQuizzes] = useState(0);
+  const [totalQuizzes, _setTotalQuizzes] = useState(0);
 
   const QuizQuestion = ({ isMobile = true }) => {
     // This would receive actual question data from generated quizzes
