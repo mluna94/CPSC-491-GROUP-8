@@ -28,7 +28,15 @@ const AuthForm = ({ isSignup = false, setUser }) => {
     
     try {
       const endpoint = isSignup ? '/api/auth/register' : '/api/auth/login';
-      const res = await axios.post(`${API_URL}${endpoint}`, formData);
+      // Remove trailing slash from API_URL and leading slash from endpoint if API_URL exists
+      const apiBase = API_URL ? API_URL.replace(/\/$/, '') : '';
+      const fullUrl = apiBase ? `${apiBase}${endpoint}` : endpoint;
+      
+      console.log('Environment:', process.env.NODE_ENV);
+      console.log('API_URL:', API_URL);
+      console.log('Full URL:', fullUrl);
+      
+      const res = await axios.post(fullUrl, formData);
       
       localStorage.setItem('token', res.data.token);
       setUser(res.data.user);
