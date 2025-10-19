@@ -1,42 +1,36 @@
-const express = require('express');
-const router = express.Router();
-const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const supabase = require('../config/supabase');
 
-// Register
-router.post('/register', async (req, res) => {
-  const { name, email, password } = req.body;
+const authMiddleware = async (req, res, next) => {
   try {
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ msg: 'User already exists' });
+    // Get token from header
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    user = new User({ name, email, password });
-    await user.save();
+    if (!token) {
+      return res.status(401).json({ msg: 'No token, authorization denied' });
+    }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user: { id: user._id, name, email } });
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Get user from Supabase (using your existing schema)
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, role, created_at')
+      .eq('id', decoded.id)
+      .single();
+
+    if (error || !user) {
+      return res.status(401).json({ msg: 'Token is not valid' });
+    }
+
+    // Attach user to request object
+    req.user = user;
+    next();
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ msg: 'Server error' });
+    console.error('Auth middleware error:', err);
+    res.status(401).json({ msg: 'Token is not valid' });
   }
-});
+};
 
-// Login
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user: { id: user._id, name: user.name, email } });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-module.exports = router;
+module.exports = authMiddleware;
