@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User } from 'lucide-react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';  // For redirection
+import { useNavigate } from 'react-router-dom';
 
 const AuthForm = ({ isSignup = false, setUser }) => {
   const [formData, setFormData] = useState({
@@ -9,21 +9,36 @@ const AuthForm = ({ isSignup = false, setUser }) => {
     email: '',
     password: '',
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Use environment variable or fallback to localhost for development
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(''); // Clear error when user types
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
+    setError('');
+    
     try {
       const endpoint = isSignup ? '/api/auth/register' : '/api/auth/login';
-      const res = await axios.post(`http://localhost:5000${endpoint}`, formData);
+      const res = await axios.post(`${API_URL}${endpoint}`, formData);
+      
       localStorage.setItem('token', res.data.token);
       setUser(res.data.user);
-      navigate('/dashboard');  // Redirect using router
+      navigate('/dashboard');
     } catch (err) {
-      alert(err.response?.data?.msg || 'Error');
+      console.error('Auth error:', err);
+      const errorMsg = err.response?.data?.msg || err.message || 'Connection error. Please try again.';
+      setError(errorMsg);
+      alert(errorMsg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,7 +54,15 @@ const AuthForm = ({ isSignup = false, setUser }) => {
       </div>
 
       <div className="auth-form">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">{isSignup ? 'Sign Up' : 'Login'}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          {isSignup ? 'Sign Up' : 'Login'}
+        </h2>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
 
         <div className="space-y-4 mb-6">
           {isSignup && (
@@ -52,6 +75,7 @@ const AuthForm = ({ isSignup = false, setUser }) => {
                 placeholder="Full Name"
                 className="form-input"
                 value={formData.name}
+                disabled={loading}
               />
             </div>
           )}
@@ -68,6 +92,7 @@ const AuthForm = ({ isSignup = false, setUser }) => {
               placeholder="Email"
               className="form-input"
               value={formData.email}
+              disabled={loading}
             />
           </div>
 
@@ -86,12 +111,17 @@ const AuthForm = ({ isSignup = false, setUser }) => {
               placeholder="Password"
               className="form-input"
               value={formData.password}
+              disabled={loading}
             />
           </div>
         </div>
 
-        <button onClick={handleSubmit} className="w-full primary-button mb-4">
-          {isSignup ? 'Sign up' : 'Login'}
+        <button 
+          onClick={handleSubmit} 
+          className="w-full primary-button mb-4"
+          disabled={loading}
+        >
+          {loading ? 'Loading...' : (isSignup ? 'Sign up' : 'Login')}
         </button>
 
         <div className="text-center text-gray-500 mb-4">or</div>
