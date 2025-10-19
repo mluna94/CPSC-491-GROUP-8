@@ -1,9 +1,0 @@
-jobs:
-  debug-vercel:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-      - name: List projects
-        run: vercel projects list --token=${{ secrets.VERCEL_TOKEN }}
