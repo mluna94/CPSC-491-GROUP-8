@@ -9,7 +9,19 @@ const QuizzyApp = () => {
   const [showResult, setShowResult] = useState(false);
   const [uploadTab, setUploadTab] = useState('document');
 
-  const QuizQuestion = ({ isMobile = true, questionText, options, correctAnswer }) => {
+  // Dynamic state that would be populated by actual logic
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [trendingTopics, setTrendingTopics] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [userNotes, setUserNotes] = useState('');
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [totalQuizzes, setTotalQuizzes] = useState(0);
+
+  const QuizQuestion = ({ isMobile = true }) => {
+    // This would receive actual question data from generated quizzes
+    const currentQuestion = quizQuestions.length > 0 ? quizQuestions[0] : null;
+
     const handleAnswerSelect = (index) => {
       setSelectedAnswer(index);
       setShowResult(false);
@@ -23,14 +35,32 @@ const QuizzyApp = () => {
       if (!showResult) {
         return selectedAnswer === index ? 'bg-blue-400' : 'bg-blue-400';
       }
-      if (index === correctAnswer) {
+      if (currentQuestion && index === currentQuestion.correctAnswer) {
         return 'bg-green-500';
       }
-      if (selectedAnswer === index && index !== correctAnswer) {
+      if (selectedAnswer === index && currentQuestion && index !== currentQuestion.correctAnswer) {
         return 'bg-red-400';
       }
       return 'bg-blue-400';
     };
+
+    // Show message if no questions generated yet
+    if (!currentQuestion) {
+      return (
+        <div className={isMobile ? 'quiz-mobile' : 'quiz-desktop'}>
+          <div className="text-center p-8">
+            <h2 className="text-xl font-bold mb-4">No Quiz Generated</h2>
+            <p className="text-gray-600 mb-4">Please upload a document or enter notes to generate quiz questions.</p>
+            <button
+              onClick={() => setCurrentView('generate')}
+              className="primary-button"
+            >
+              Generate Quiz
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className={isMobile ? 'quiz-mobile' : 'quiz-desktop'}>
@@ -40,7 +70,7 @@ const QuizzyApp = () => {
             <div className="progress-bar">
               <div className="progress-fill"></div>
             </div>
-            <span className="text-gray-600 font-medium">1/10</span>
+            <span className="text-gray-600 font-medium">1/{quizQuestions.length}</span>
           </div>
         )}
 
@@ -66,18 +96,18 @@ const QuizzyApp = () => {
               </div>
             </div>
             <div className="text-left">
-              <span className="text-lg font-medium">Question 1/4</span>
+              <span className="text-lg font-medium">Question 1/{quizQuestions.length}</span>
             </div>
           </div>
         )}
 
         <div className="quiz-question">
           <h1 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-            {questionText}
+            {currentQuestion.questionText}
           </h1>
 
           <div className="space-y-4 mb-8">
-            {options.map((option, index) => (
+            {currentQuestion.options.map((option, index) => (
               <button
                 key={index}
                 onClick={() => handleAnswerSelect(index)}
@@ -138,96 +168,157 @@ const QuizzyApp = () => {
             <h3 className="text-xl font-bold text-gray-900 mb-2">Trending Topics</h3>
             <p className="text-gray-700 mb-6">click on a topic to begin</p>
 
-            <div className="topic-grid">
-              <button className="topic-button">Arrays</button>
-              <button className="topic-button">RAG</button>
-              <button className="topic-button">Hash Maps</button>
-              <button className="topic-button">Cars</button>
-              <button className="topic-button">Rocks</button>
-              <button className="topic-button">Linux</button>
-              <button className="topic-button">LLM</button>
-            </div>
+            {trendingTopics.length > 0 ? (
+              <div className="topic-grid">
+                {trendingTopics.map((topic, index) => (
+                  <button key={index} className="topic-button">{topic}</button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No trending topics yet</p>
+                <p className="text-sm text-gray-400">Topics will appear as you create more quizzes</p>
+              </div>
+            )}
           </div>
 
           <div className="recent-activity">
             <h3 className="text-xl font-bold text-gray-900 mb-2">Recent Activity</h3>
-            <p className="text-gray-700 mb-6">You completed a total of 10 quizzes</p>
+            <p className="text-gray-700 mb-6">You completed a total of {totalQuizzes} quizzes</p>
 
-            <div className="space-y-4">
-              {['Hash Maps', 'LLM', 'RAG', 'Cars'].map((topic, index) => (
-                <div key={index} className="activity-item">
-                  <h4 className="font-bold text-gray-900 underline">{topic}</h4>
-                  <p className="text-gray-600 text-sm flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    2/2/2025
-                  </p>
-                </div>
-              ))}
+            {recentActivity.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivity.map((activity, index) => (
+                  <div key={index} className="activity-item">
+                    <h4 className="font-bold text-gray-900 underline">{activity.topic}</h4>
+                    <p className="text-gray-600 text-sm flex items-center">
+                      <Clock className="w-4 h-4 mr-1" />
+                      {activity.date}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No recent activity</p>
+                <button
+                  onClick={() => setCurrentView('generate')}
+                  className="primary-button"
+                >
+                  Create Your First Quiz
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const GenerateQuiz = () => {
+    const handleFileUpload = (event) => {
+      const file = event.target.files[0];
+      setUploadedFile(file);
+      // Here you would implement file processing logic
+    };
+
+    const handleNotesChange = (event) => {
+      setUserNotes(event.target.value);
+    };
+
+    const handleGenerate = () => {
+      if (uploadTab === 'document' && !uploadedFile) {
+        alert('Please upload a document first');
+        return;
+      }
+      if (uploadTab === 'text' && !userNotes.trim()) {
+        alert('Please enter some notes first');
+        return;
+      }
+
+      setIsGenerating(true);
+      // Here you would implement quiz generation logic
+      // For demo purposes, just simulate loading
+      setTimeout(() => {
+        setIsGenerating(false);
+        alert('Quiz generation would happen here based on your content!');
+      }, 2000);
+    };
+
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <div className="dashboard-header">
+          <div className="flex items-center space-x-3">
+            <div className="logo-container">
+              <div className="logo-inner"></div>
             </div>
+            <span className="font-bold text-lg">Quizzy</span>
+            <nav className="flex space-x-6 ml-8">
+              <span className="nav-link">Home</span>
+              <span className="nav-link">How It Works</span>
+              <span className="nav-link">FAQ</span>
+            </nav>
+          </div>
+          <div className="user-avatar bg-blue-500">
+            <User className="text-black" size={20} />
           </div>
         </div>
-      </div>
-    </div>
-  );
 
-  const GenerateQuiz = () => (
-    <div className="min-h-screen bg-gray-100">
-      <div className="dashboard-header">
-        <div className="flex items-center space-x-3">
-          <div className="logo-container">
-            <div className="logo-inner"></div>
+        <div className="p-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Generate a quiz</h1>
+          <p className="text-gray-600 mb-6">Upload a document, type a topic or paste notes to generate questions</p>
+
+          <div className="flex space-x-2 mb-6">
+            <button
+              onClick={() => setUploadTab('document')}
+              className={`tab-button ${uploadTab === 'document' ? 'tab-active' : 'tab-inactive'}`}
+            >
+              Document
+            </button>
+            <button
+              onClick={() => setUploadTab('text')}
+              className={`tab-button ${uploadTab === 'text' ? 'tab-active' : 'tab-inactive'}`}
+            >
+              Text
+            </button>
           </div>
-          <span className="font-bold text-lg">Quizzy</span>
-          <nav className="flex space-x-6 ml-8">
-            <span className="nav-link">Home</span>
-            <span className="nav-link">How It Works</span>
-            <span className="nav-link">FAQ</span>
-          </nav>
-        </div>
-        <div className="user-avatar bg-blue-500">
-          <User className="text-black" size={20} />
-        </div>
-      </div>
 
-      <div className="p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Generate a quiz</h1>
-        <p className="text-gray-600 mb-6">Upload a document, type a topic or paste notes to generate questions</p>
+          {uploadTab === 'document' ? (
+            <div className="upload-area">
+              <Upload className="mx-auto mb-4 text-gray-600" size={48} />
+              <p className="text-gray-600 text-lg mb-4">Drag or upload a document</p>
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                accept=".pdf,.doc,.docx,.txt"
+                className="mb-4"
+              />
+              {uploadedFile && (
+                <p className="text-green-600">Selected: {uploadedFile.name}</p>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-200 rounded-lg p-6 mb-6">
+              <textarea
+                placeholder="Paste in your notes or content"
+                value={userNotes}
+                onChange={handleNotesChange}
+                className="textarea-large focus:outline-none"
+              />
+            </div>
+          )}
 
-        <div className="flex space-x-2 mb-6">
           <button
-            onClick={() => setUploadTab('document')}
-            className={`tab-button ${uploadTab === 'document' ? 'tab-active' : 'tab-inactive'}`}
+            onClick={handleGenerate}
+            disabled={isGenerating}
+            className="primary-button"
           >
-            Document
-          </button>
-          <button
-            onClick={() => setUploadTab('text')}
-            className={`tab-button ${uploadTab === 'text' ? 'tab-active' : 'tab-inactive'}`}
-          >
-            Text
+            {isGenerating ? 'Generating...' : 'Generate'}
           </button>
         </div>
-
-        {uploadTab === 'document' ? (
-          <div className="upload-area">
-            <Upload className="mx-auto mb-4 text-gray-600" size={48} />
-            <p className="text-gray-600 text-lg">Drag or upload a document</p>
-          </div>
-        ) : (
-          <div className="bg-gray-200 rounded-lg p-6 mb-6">
-            <textarea
-              placeholder="Paste in your notes or content"
-              className="textarea-large focus:outline-none"
-            />
-          </div>
-        )}
-
-        <button className="primary-button">
-          Generate
-        </button>
       </div>
-    </div>
-  );
+    );
+  };
 
   const LandingPage = () => (
     <div className="min-h-screen bg-gradient-blue">
@@ -286,27 +377,16 @@ const QuizzyApp = () => {
             <div className="preview-section">
               <h4 className="font-bold mb-2">Trending Topics</h4>
               <p className="text-sm text-gray-700 mb-3">click on a topic to begin</p>
-              <div className="preview-topics">
-                <span className="font-bold">Arrays</span>
-                <span className="font-bold">RAG</span>
-                <span className="font-bold">Hash Maps</span>
-                <span className="font-bold">Cars</span>
-                <span className="font-bold">Rocks</span>
-                <span className="font-bold">Linux</span>
-                <span className="font-bold">LLM</span>
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500">Topics appear as you create quizzes</p>
               </div>
             </div>
 
             <div className="preview-section">
               <h4 className="font-bold mb-2">Recent Activity</h4>
-              <p className="text-sm text-gray-700 mb-3">You completed a total of 10 quizzes</p>
-              <div className="preview-activities space-y-2">
-                {['Hash Maps', 'LLM', 'RAG', 'Cars'].map((topic, index) => (
-                  <div key={index} className="preview-activity">
-                    <span className="preview-activity-title">{topic}</span>
-                    <p className="preview-activity-date">⏰ 2/2/2025</p>
-                  </div>
-                ))}
+              <p className="text-sm text-gray-700 mb-3">Track your quiz progress</p>
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500">Activity appears after taking quizzes</p>
               </div>
             </div>
           </div>
@@ -415,19 +495,9 @@ const QuizzyApp = () => {
   const renderView = () => {
     switch (currentView) {
       case 'quiz-mobile':
-        return <QuizQuestion
-          isMobile={true}
-          questionText="What is the command to display the current directory's contents?"
-          options={['cd', 'ls', 'pwd', 'mkdir']}
-          correctAnswer={1}
-        />;
+        return <QuizQuestion isMobile={true} />;
       case 'quiz-desktop':
-        return <QuizQuestion
-          isMobile={false}
-          questionText="Which Sorting Algorithmn as a time complexity of O(n log n)?"
-          options={['Bubble Sort', 'Merge Sort', 'Selection Sort', 'Insertion Sort']}
-          correctAnswer={1}
-        />;
+        return <QuizQuestion isMobile={false} />;
       case 'dashboard':
         return <Dashboard />;
       case 'generate':
