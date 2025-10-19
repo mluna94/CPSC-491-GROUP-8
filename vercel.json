@@ -1,5 +1,18 @@
 {
-  "buildCommand": "cd Client && DISABLE_ESLINT_PLUGIN=true npm install && npm run build",
+  "version": 2,
+  "builds": [
+    {
+      "src": "Server/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/Server/index.js"
+    }
+  ],
+  "buildCommand": "cd Client && DISABLE_ESLINT_PLUGIN=true npm run build",
   "outputDirectory": "Client/build",
-  "installCommand": "npm install --prefix Client"
+  "installCommand": "npm install --prefix Client && npm install --prefix Server"
 }
