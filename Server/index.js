@@ -6,18 +6,24 @@ const authRoutes = require('./routes/auth');
 dotenv.config();
 const app = express();
 
-// CORS configuration for separate frontend
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  process.env.FRONTEND_URL,
-  /\.vercel\.app$/  // Allow all Vercel preview deployments
-];
-
-// Server/index.js
+// CORS configuration - allow all Vercel domains and localhost
 app.use(cors({
-  origin: ['https://quizzy.vercel.app', 'http://localhost:3000'],
-  credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    if (origin.includes('localhost')) return callback(null, true);
+    
+    // Allow all vercel.app domains
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    
+    // Otherwise deny
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -43,4 +49,3 @@ if (require.main === module) {
     console.log('Using Supabase for database');
   });
 }
-
