@@ -15,6 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Deploy Backend to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -33,6 +38,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Deploy Frontend to Vercel
         uses: amondnet/vercel-action@v25
