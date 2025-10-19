@@ -2,13 +2,32 @@ name: Deploy to Vercel
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
+    name: Deploy Backend
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy Backend to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
+          working-directory: ./Server
+          vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend
+    needs: deploy-backend  # Wait for backend to deploy first
     
     steps:
       - name: Checkout
@@ -30,13 +49,13 @@ jobs:
           DISABLE_ESLINT_PLUGIN=true npm run build
         env:
           CI: false
-          REACT_APP_API_URL: ""
+          REACT_APP_API_URL: ${{ secrets.BACKEND_URL }}
           
-      - name: Deploy to Vercel
+      - name: Deploy Frontend to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod --force' || '--force' }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
+          working-directory: ./Client
+          vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
