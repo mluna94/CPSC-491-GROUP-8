@@ -14,20 +14,9 @@ const allowedOrigins = [
   /\.vercel\.app$/  // Allow all Vercel preview deployments
 ];
 
+// Server/index.js
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.some(allowed => {
-      if (allowed instanceof RegExp) return allowed.test(origin);
-      return allowed === origin;
-    })) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: ['https://quizzy.vercel.app', 'http://localhost:3000'],
   credentials: true
 }));
 
@@ -54,3 +43,4 @@ if (require.main === module) {
     console.log('Using Supabase for database');
   });
 }
+
