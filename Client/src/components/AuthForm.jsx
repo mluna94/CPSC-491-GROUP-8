@@ -14,6 +14,7 @@ const AuthForm = ({ isSignup = false, setUser }) => {
   const navigate = useNavigate();
 
   // Use environment variable or fallback to localhost for development
+  // Empty string means relative URL (same domain) for production
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   const handleChange = (e) => {
