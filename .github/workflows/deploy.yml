@@ -21,41 +21,26 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
-          working-directory: ./Server
           vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
+        env:
+          VERCEL_PROJECT_SETTINGS: '{"rootDirectory":"Server"}'
 
   deploy-frontend:
     runs-on: ubuntu-latest
     name: Deploy Frontend
-    needs: deploy-backend  # Wait for backend to deploy first
+    needs: deploy-backend
     
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Install Client dependencies
-        run: |
-          cd Client
-          npm ci
-          
-      - name: Build Client
-        run: |
-          cd Client
-          DISABLE_ESLINT_PLUGIN=true npm run build
-        env:
-          CI: false
-          REACT_APP_API_URL: ${{ secrets.BACKEND_URL }}
-          
       - name: Deploy Frontend to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          working-directory: ./Client
           vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
+        env:
+          VERCEL_PROJECT_SETTINGS: '{"rootDirectory":"Client"}'
+          REACT_APP_API_URL: ${{ secrets.BACKEND_URL }}
