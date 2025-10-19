@@ -19,11 +19,11 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 
-// For Vercel deployment
-if (process.env.VERCEL) {
-  module.exports = app;
-} else {
-  // For local development
+// Export for Vercel (serverless)
+module.exports = app;
+
+// For local development only
+if (require.main === module) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
