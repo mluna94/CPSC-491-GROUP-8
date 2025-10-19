@@ -1,54 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "Server/index.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "Client/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/health",
-      "dest": "/Server/index.js"
-    },
-    {
-      "src": "/api/auth/(.*)",
-      "dest": "/Server/index.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/Server/index.js"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/Client/build/static/$1"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/Client/build/favicon.ico"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/Client/build/manifest.json"
-    },
-    {
-      "src": "/logo(.*)",
-      "dest": "/Client/build/logo$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|json|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "dest": "/Client/build/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/Client/build/index.html"
-    }
-  ]
+  "buildCommand": "cd Client && DISABLE_ESLINT_PLUGIN=true npm install && npm run build",
+  "outputDirectory": "Client/build",
+  "installCommand": "npm install --prefix Client"
 }
