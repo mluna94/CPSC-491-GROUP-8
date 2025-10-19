@@ -18,14 +18,5 @@
       "source": "/api/:path*",
       "destination": "/Server/index.js"
     }
-  ],
-  "routes": [
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/Client/build/index.html"
-    }
   ]
 }
