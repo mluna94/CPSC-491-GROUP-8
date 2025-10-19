@@ -1,22 +1,63 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const supabase = require('../config/supabase');
 
 // Register
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
+  
   try {
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ msg: 'User already exists' });
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-    user = new User({ name, email, password });
-    await user.save();
+    if (existingUser) {
+      return res.status(400).json({ msg: 'User already exists' });
+    }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user: { id: user._id, name, email } });
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Insert new user (using your existing schema with password_hash)
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert([
+        { 
+          email, 
+          password_hash: hashedPassword,
+          role: 'user' // default role
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ msg: 'Error creating user' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: newUser.id }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '1h' }
+    );
+
+    res.json({ 
+      token, 
+      user: { 
+        id: newUser.id, 
+        name: name, // Return name from request since it's not stored in your schema
+        email: newUser.email 
+      } 
+    });
   } catch (err) {
-    console.log(err);
+    console.error('Server error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -24,17 +65,43 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
+    // Find user by email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+    if (error || !user) {
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, user: { id: user._id, name: user.name, email } });
+    // Compare password with password_hash from your schema
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '1h' }
+    );
+
+    res.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        name: user.email.split('@')[0], // Generate name from email since not in schema
+        email: user.email 
+      } 
+    });
   } catch (err) {
-    console.log(err);
+    console.error('Server error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 });
