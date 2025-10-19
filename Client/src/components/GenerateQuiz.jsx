@@ -1,47 +1,77 @@
 import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { X } from 'lucide-react';
 import Header from './Header';
 
-const GenerateQuiz = ({ user, setUser }) => {
-  const [uploadTab, setUploadTab] = useState('document');
+const QuizQuestion = ({ user, setUser, isMobile = true, questionText, options, correctAnswer }) => {
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [showResult, setShowResult] = useState(false);
+
+  const handleAnswerSelect = (index) => {
+    setSelectedAnswer(index);
+    setShowResult(false);
+  };
+
+  const handleCheck = () => {
+    setShowResult(true);
+  };
+
+  const getButtonColor = (index) => {
+    if (!showResult) {
+      return selectedAnswer === index ? 'bg-blue-400' : 'bg-blue-400';
+    }
+    if (index === correctAnswer) {
+      return 'bg-green-500';
+    }
+    if (selectedAnswer === index && index !== correctAnswer) {
+      return 'bg-red-400';
+    }
+    return 'bg-blue-400';
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Header user={user} setUser={setUser} showAuthLinks={false} />
-      <div className="p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Generate a quiz</h1>
-        <p className="text-gray-600 mb-6">Upload a document, type a topic or paste notes to generate questions</p>
-        <div className="flex space-x-2 mb-6">
+    <div className={isMobile ? 'quiz-mobile' : 'quiz-desktop'}>
+      {isMobile ? (
+        <div className="quiz-header">
+          <X className="text-gray-600" size={24} />
+          <div className="progress-bar">
+            <div className="progress-fill"></div>
+          </div>
+          <span className="text-gray-600 font-medium">1/10</span>
+        </div>
+      ) : (
+        <Header user={user} setUser={setUser} showAuthLinks={false} />
+      )}
+      <div className="quiz-question">
+        <h1 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+          {questionText}
+        </h1>
+        <div className="space-y-4 mb-8">
+          {options.map((option, index) => (
+            <button
+              key={index}
+              onClick={() => handleAnswerSelect(index)}
+              className={`answer-button ${getButtonColor(index)}`}
+            >
+              <div className="answer-letter">
+                <span className="text-white font-bold">
+                  {String.fromCharCode(65 + index)}
+                </span>
+              </div>
+              <span className="answer-text">{option}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-center">
           <button
-            onClick={() => setUploadTab('document')}
-            className={`tab-button ${uploadTab === 'document' ? 'tab-active' : 'tab-inactive'}`}
+            onClick={handleCheck}
+            className="secondary-button"
           >
-            Document
-          </button>
-          <button
-            onClick={() => setUploadTab('text')}
-            className={`tab-button ${uploadTab === 'text' ? 'tab-active' : 'tab-inactive'}`}
-          >
-            Text
+            {isMobile ? 'Check' : showResult ? 'Next' : 'Check'}
           </button>
         </div>
-        {uploadTab === 'document' ? (
-          <div className="upload-area">
-            <Upload className="mx-auto mb-4 text-gray-600" size={48} />
-            <p className="text-gray-600 text-lg">Drag or upload a document</p>
-          </div>
-        ) : (
-          <div className="bg-gray-200 rounded-lg p-6 mb-6">
-            <textarea
-              placeholder="Paste in your notes or content"
-              className="textarea-large focus:outline-none"
-            />
-          </div>
-        )}
-        <button className="primary-button">Generate</button>
       </div>
     </div>
   );
 };
 
-export default GenerateQuiz;
+export default QuizQuestion;
