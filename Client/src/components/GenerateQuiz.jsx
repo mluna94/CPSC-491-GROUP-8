@@ -10,6 +10,8 @@ const GenerateQuiz = ({ user, setUser }) => {
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
+  const fileInputRef = useRef(null);
+  
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -63,6 +65,10 @@ const GenerateQuiz = ({ user, setUser }) => {
 
   const removeFile = () => {
     setUploadedFile(null);
+    // Reset the file input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleGenerate = async () => {
@@ -153,6 +159,7 @@ const GenerateQuiz = ({ user, setUser }) => {
               <label className="primary-button inline-block cursor-pointer">
                 Browse Files
                 <input
+                  ref={fileInputRef}
                   type="file"
                   className="hidden"
                   accept=".pdf,.doc,.docx,.txt,.md"
@@ -229,3 +236,4 @@ const GenerateQuiz = ({ user, setUser }) => {
 };
 
 export default GenerateQuiz;
+
