@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
 import Header from './Header';
 
@@ -236,4 +236,5 @@ const GenerateQuiz = ({ user, setUser }) => {
 };
 
 export default GenerateQuiz;
+
 
