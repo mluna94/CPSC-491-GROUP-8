@@ -4,6 +4,49 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 
+// Middleware to verify JWT token
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ msg: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch (err) {
+    return res.status(401).json({ msg: 'Invalid token' });
+  }
+};
+
+// Verify token endpoint (for session restoration)
+router.get('/verify', verifyToken, async (req, res) => {
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('id', req.userId)
+      .single();
+
+    if (error || !user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    res.json({ 
+      user: { 
+        id: user.id, 
+        name: user.email.split('@')[0],
+        email: user.email 
+      } 
+    });
+  } catch (err) {
+    console.error('Verify error:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
 // Register
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
@@ -45,7 +88,7 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign(
       { id: newUser.id }, 
       process.env.JWT_SECRET, 
-      { expiresIn: '1h' }
+      { expiresIn: '7d' } // Extended to 7 days
     );
 
     res.json({ 
@@ -89,7 +132,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { id: user.id }, 
       process.env.JWT_SECRET, 
-      { expiresIn: '1h' }
+      { expiresIn: '7d' } // Extended to 7 days
     );
 
     res.json({ 
