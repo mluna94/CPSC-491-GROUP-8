@@ -6,7 +6,9 @@ const Header = ({ user, setUser, showAuthLinks = true }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    // Clear both token and user data (ONLY CHANGE: added user removal)
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
     navigate('/login');
   };
