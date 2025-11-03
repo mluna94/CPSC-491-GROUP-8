@@ -6,44 +6,28 @@ import Dashboard from './components/Dashboard';
 import GenerateQuiz from './components/GenerateQuiz';
 import LandingPage from './components/LandingPage';
 import QuizQuestion from './components/QuizQuestion';
-import axios from 'axios';
 
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Use environment variable or fallback to localhost for development
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
   // Restore user session on component mount
   useEffect(() => {
-    const restoreSession = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (token) {
-        try {
-          // Verify token with backend
-          const apiBase = API_URL ? API_URL.replace(/\/$/, '') : '';
-          const fullUrl = apiBase ? `${apiBase}/api/auth/verify` : '/api/auth/verify';
-          
-          const res = await axios.get(fullUrl, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          setUser(res.data.user);
-        } catch (err) {
-          console.error('Token verification failed:', err);
-          // Token is invalid, remove it
-          localStorage.removeItem('token');
-          setUser(null);
-        }
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    
+    if (token && savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (err) {
+        console.error('Failed to parse saved user:', err);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
-      
-      setLoading(false);
-    };
-
-    restoreSession();
-  }, [API_URL]);
+    }
+    
+    setLoading(false);
+  }, []);
 
   // Show loading state while checking authentication
   if (loading) {
