@@ -38,7 +38,7 @@ const AuthForm = ({ isSignup = false, setUser }) => {
       
       const res = await axios.post(fullUrl, formData);
       
-      // Save both token and user data to localStorage
+      // Save token and user data to localStorage (ONLY CHANGE: added user save)
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       
