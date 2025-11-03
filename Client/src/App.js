@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import './styles/QuizzyApp.css';
 import AuthForm from './components/AuthForm';
@@ -6,9 +6,53 @@ import Dashboard from './components/Dashboard';
 import GenerateQuiz from './components/GenerateQuiz';
 import LandingPage from './components/LandingPage';
 import QuizQuestion from './components/QuizQuestion';
+import axios from 'axios';
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Use environment variable or fallback to localhost for development
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+  // Restore user session on component mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        try {
+          // Verify token with backend
+          const apiBase = API_URL ? API_URL.replace(/\/$/, '') : '';
+          const fullUrl = apiBase ? `${apiBase}/api/auth/verify` : '/api/auth/verify';
+          
+          const res = await axios.get(fullUrl, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          setUser(res.data.user);
+        } catch (err) {
+          console.error('Token verification failed:', err);
+          // Token is invalid, remove it
+          localStorage.removeItem('token');
+          setUser(null);
+        }
+      }
+      
+      setLoading(false);
+    };
+
+    restoreSession();
+  }, [API_URL]);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   const NavButtons = () => (
     <div className="nav-buttons">
