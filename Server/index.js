@@ -49,3 +49,6 @@ if (require.main === module) {
     console.log('Using Supabase for database');
   });
 }
+const quizRoutes = require('./routes/quiz');
+app.use('/api/quiz', quizRoutes);
+
