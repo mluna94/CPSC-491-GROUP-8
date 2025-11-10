@@ -27,7 +27,18 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Quizzy Backend API',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth/*',
+      quiz: '/api/quiz/*'
+    }
+  });
+});
 // Test Supabase connection
 const supabase = require('./config/supabase');
 
@@ -51,4 +62,5 @@ if (require.main === module) {
 }
 const quizRoutes = require('./routes/quiz');
 app.use('/api/quiz', quizRoutes);
+
 
