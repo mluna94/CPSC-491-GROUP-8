@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import './styles/QuizzyApp.css';
 import AuthForm from './components/AuthForm';
@@ -9,6 +9,34 @@ import QuizQuestion from './components/QuizQuestion';
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Restore user session on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    
+    if (token && savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (err) {
+        console.error('Failed to parse saved user:', err);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    }
+    
+    setLoading(false);
+  }, []);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   const NavButtons = () => (
     <div className="nav-buttons">

@@ -38,7 +38,10 @@ const AuthForm = ({ isSignup = false, setUser }) => {
       
       const res = await axios.post(fullUrl, formData);
       
+      // Save both token and user to localStorage (FIX FOR REFRESH LOGOUT)
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      
       setUser(res.data.user);
       navigate('/dashboard');
     } catch (err) {
