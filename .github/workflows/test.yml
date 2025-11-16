@@ -1,0 +1,61 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      working-directory: ./Server
+      run: npm ci
+      
+    - name: Run backend tests
+      working-directory: ./Server
+      run: npm test -- --coverage
+      env:
+        SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TEST_SUPABASE_KEY }}
+        JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./Server/coverage
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      working-directory: ./Client
+      run: npm ci
+      
+    - name: Run frontend tests
+      working-directory: ./Client
+      run: npm run test:ci
+      
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./Client/coverage
