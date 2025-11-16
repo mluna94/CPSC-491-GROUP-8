@@ -5,9 +5,10 @@
   "framework": null,
   "ignoreCommand": "git diff --quiet HEAD^ HEAD ./",
   "env": {
-    "SUPABASE_URL": "@supabase_url",
-    "SUPABASE_ANON_KEY": "@supabase_anon_key",
-    "JWT_SECRET": "@jwt_secret",
+    "SUPABASE_URL": "@test_supabase_url",
+    "SUPABASE_ANON_KEY": "@test_supabase_anon_key",
+    "JWT_SECRET": "@test_jwt_secret",
     "ANTHROPIC_API_KEY": "@anthropic_api_key"
   }
+
 }
