@@ -164,11 +164,16 @@ router.post('/generate', verifyToken, upload.single('file'), async (req, res) =>
     }
     
     // Generate quiz questions using AI
+    console.log('Generating quiz with', numQuestions, 'questions');
     const aiQuestions = await generateQuizWithAI(content, parseInt(numQuestions) || 10);
     
     if (!aiQuestions || aiQuestions.length === 0) {
       return res.status(500).json({ msg: 'Failed to generate questions' });
     }
+    
+    // Log the AI response for debugging
+    console.log('AI generated', aiQuestions.length, 'questions');
+    console.log('First question sample:', JSON.stringify(aiQuestions[0], null, 2));
     
     // Create a title from the first few words of content
     const title = content.substring(0, 50).trim() + (content.length > 50 ? '...' : '');
@@ -193,87 +198,124 @@ router.post('/generate', verifyToken, upload.single('file'), async (req, res) =>
       return res.status(500).json({ msg: 'Failed to save quiz to database' });
     }
     
-    // Insert questions and choices
-    const questionPromises = aiQuestions.map(async (q) => {
-      // Insert question
-      const { data: question, error: questionError } = await supabase
-        .from('questions')
-        .insert([
-          {
-            quiz_id: quiz.id,
-            question_text: q.question,
-            question_type: 'multiple_choice',
-            explanation: q.explanation
-          }
-        ])
-        .select()
-        .single();
+    console.log('Quiz created with ID:', quiz.id);
+    
+    // Insert questions and choices SEQUENTIALLY to avoid concurrency issues
+    const insertedQuestions = [];
+    
+    for (let i = 0; i < aiQuestions.length; i++) {
+      const q = aiQuestions[i];
       
-      if (questionError) {
-        throw new Error('Failed to insert question');
-      }
-      
-      // Insert choices
-      const choicePromises = q.choices.map((choiceText, index) => {
-        return supabase
-          .from('choices')
+      try {
+        console.log(`Inserting question ${i + 1}/${aiQuestions.length}`);
+        
+        // Validate question data
+        if (!q.question || !q.choices || q.choices.length !== 4) {
+          console.error(`Invalid question data at index ${i}:`, q);
+          throw new Error(`Question ${i + 1} has invalid format`);
+        }
+        
+        // Truncate long text if needed (adjust based on your DB column limits)
+        const questionText = q.question.substring(0, 1000);
+        const explanation = q.explanation ? q.explanation.substring(0, 2000) : null;
+        
+        // Insert question
+        const { data: question, error: questionError } = await supabase
+          .from('questions')
           .insert([
             {
-              question_id: question.id,
-              choice_text: choiceText,
-              is_correct: index === q.correct_index
+              quiz_id: quiz.id,
+              question_text: questionText,
+              question_type: 'multiple_choice',
+              explanation: explanation
             }
           ])
           .select()
           .single();
-      });
-      
-      const choiceResults = await Promise.all(choicePromises);
-      
-      // Check for errors
-      const choiceErrors = choiceResults.filter(r => r.error);
-      if (choiceErrors.length > 0) {
-        throw new Error('Failed to insert choices');
+        
+        if (questionError) {
+          console.error(`Error inserting question ${i + 1}:`, questionError);
+          throw new Error(`Failed to insert question ${i + 1}: ${JSON.stringify(questionError)}`);
+        }
+        
+        console.log(`Question ${i + 1} inserted with ID:`, question.id);
+        
+        // Insert choices for this question
+        const choices = [];
+        for (let j = 0; j < q.choices.length; j++) {
+          const choiceText = q.choices[j].substring(0, 500); // Truncate if needed
+          
+          console.log(`  Inserting choice ${j + 1}/4 for question ${i + 1}`);
+          
+          const { data: choice, error: choiceError } = await supabase
+            .from('choices')
+            .insert([
+              {
+                question_id: question.id,
+                choice_text: choiceText,
+                is_correct: j === q.correct_index
+              }
+            ])
+            .select()
+            .single();
+          
+          if (choiceError) {
+            console.error(`Error inserting choice ${j + 1} for question ${i + 1}:`, choiceError);
+            throw new Error(`Failed to insert choice ${j + 1} for question ${i + 1}: ${JSON.stringify(choiceError)}`);
+          }
+          
+          choices.push(choice);
+        }
+        
+        console.log(`All 4 choices inserted for question ${i + 1}`);
+        
+        insertedQuestions.push({
+          ...question,
+          choices
+        });
+        
+      } catch (error) {
+        console.error(`Failed at question ${i + 1}:`, error);
+        console.error('Error details:', error.message);
+        console.error('Question data:', JSON.stringify(q, null, 2));
+        
+        // Delete the quiz and all inserted questions on error
+        console.log('Cleaning up - deleting quiz:', quiz.id);
+        await supabase.from('quizzes').delete().eq('id', quiz.id);
+        
+        return res.status(500).json({ 
+          msg: `Failed to save questions to database at question ${i + 1}`,
+          error: error.message,
+          questionNumber: i + 1
+        });
       }
-      
-      return {
-        ...question,
-        choices: choiceResults.map(r => r.data)
-      };
-    });
-    
-    try {
-      const insertedQuestions = await Promise.all(questionPromises);
-      
-      // Return the complete quiz with questions
-      res.json({
-        quiz: {
-          id: quiz.id,
-          title: quiz.title,
-          description: quiz.description,
-          created_at: quiz.created_at
-        },
-        questions: insertedQuestions.map(q => ({
-          id: q.id,
-          question: q.question_text,
-          explanation: q.explanation,
-          choices: q.choices.map(c => ({
-            id: c.id,
-            text: c.choice_text,
-            is_correct: c.is_correct
-          }))
-        }))
-      });
-      
-    } catch (insertError) {
-      console.error('Error inserting questions/choices:', insertError);
-      // Delete the quiz if questions failed to insert
-      await supabase.from('quizzes').delete().eq('id', quiz.id);
-      return res.status(500).json({ msg: 'Failed to save questions to database' });
     }
+    
+    console.log('All questions and choices inserted successfully!');
+    
+    // Return the complete quiz with questions
+    res.json({
+      quiz: {
+        id: quiz.id,
+        title: quiz.title,
+        description: quiz.description,
+        created_at: quiz.created_at
+      },
+      questions: insertedQuestions.map(q => ({
+        id: q.id,
+        question: q.question_text,
+        explanation: q.explanation,
+        choices: q.choices.map(c => ({
+          id: c.id,
+          text: c.choice_text,
+          is_correct: c.is_correct
+        }))
+      }))
+    });
     
   } catch (err) {
     console.error('Generate quiz error:', err);
+    console.error('Error stack:', err.stack);
     res.status(500).json({ msg: err.message || 'Server error while generating quiz' });
   }
 });
