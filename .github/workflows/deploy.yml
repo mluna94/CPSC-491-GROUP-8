@@ -50,7 +50,7 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
+          vercel-args: '--prod'
+          working-directory: './Client'
         env:
-          VERCEL_PROJECT_SETTINGS: '{"rootDirectory":"Client"}'
           REACT_APP_API_URL: ${{ secrets.BACKEND_URL }}
