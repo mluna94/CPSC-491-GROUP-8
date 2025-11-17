@@ -26,9 +26,8 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
+          working-directory: './Server'
           vercel-args: ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
-        env:
-          VERCEL_PROJECT_SETTINGS: '{"rootDirectory":"Server"}'
 
   deploy-frontend:
     runs-on: ubuntu-latest
@@ -44,13 +43,22 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install Frontend Dependencies
+        working-directory: ./Client
+        run: npm ci
+
+      - name: Build Frontend
+        working-directory: ./Client
+        run: npm run build
+        env:
+          REACT_APP_API_URL: ${{ secrets.BACKEND_URL }}
+          CI: false
+
       - name: Deploy Frontend to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
-          vercel-args: '--prod'
           working-directory: './Client'
-        env:
-          REACT_APP_API_URL: ${{ secrets.BACKEND_URL }}
+          vercel-args: '--prod --prebuilt'
