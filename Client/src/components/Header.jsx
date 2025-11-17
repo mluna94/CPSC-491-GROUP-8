@@ -33,6 +33,8 @@ const Header = ({ user, setUser, showAuthLinks = true }) => {
               <div className="user-avatar bg-blue-500">
                 <User className="text-black" size={20} />
               </div>
+              <Link to="/history" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">History
+            </Link>
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
@@ -47,9 +49,12 @@ const Header = ({ user, setUser, showAuthLinks = true }) => {
             <Link to="/login" className="px-4 py-2 text-gray-700 hover:bg-blue-400 rounded transition-colors">
               Login
             </Link>
+            <Link to="/history" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">History
+            </Link>
             <Link to="/signup" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
               Sign up
             </Link>
+            
           </>
         ) : null}
       </div>

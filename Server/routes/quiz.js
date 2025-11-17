@@ -434,6 +434,24 @@ router.delete('/:quizId', verifyToken, async (req, res) => {
   }
 });
 
+// GET /api/quiz/attempts - Get all attempts for user
+router.get('/attempts', verifyToken, async (req, res) => {
+  try {
+    const { data: attempts, error } = await supabase
+      .from('quiz_attempts')
+      .select('id, quiz_id, score, started_at, completed_at')
+      .eq('user_id', req.userId)
+      .order('completed_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ attempts });
+  } catch (err) {
+    console.error('Get attempts error:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
 // POST /api/quiz/:quizId/submit - Submit quiz attempt and save results
 router.post('/:quizId/submit', verifyToken, async (req, res) => {
   try {

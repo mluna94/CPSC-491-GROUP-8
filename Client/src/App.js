@@ -6,7 +6,8 @@ import Dashboard from './components/Dashboard';
 import GenerateQuiz from './components/GenerateQuiz';
 import LandingPage from './components/LandingPage';
 import QuizQuestion from './components/QuizQuestion';
-import TakeQuiz from './components/TakeQuiz';
+import QuizHistory from './components/QuizHistory';
+import QuizPage from './components/QuizPage';
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -58,6 +59,7 @@ const App = () => {
           <Route path="/" element={<LandingPage user={user} setUser={setUser} />} />
           <Route path="/signup" element={<AuthForm isSignup={true} setUser={setUser} />} />
           <Route path="/login" element={<AuthForm isSignup={false} setUser={setUser} />} />
+          <Route path="/history" element={<QuizHistory />} />
           <Route
             path="/dashboard"
             element={user ? <Dashboard user={user} setUser={setUser} /> : <Navigate to="/login" />}
@@ -104,6 +106,9 @@ const App = () => {
               />
             }
           />
+          <Route path="/quiz/:id" element={<QuizPage />} />
+          <Route path="*" element={<Navigate to="/" />} />
+          
         </Routes>
         {/* Optional: Show nav buttons in development */}
         {/* <NavButtons /> */}
