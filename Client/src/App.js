@@ -5,6 +5,7 @@ import AuthForm from './components/AuthForm';
 import Dashboard from './components/Dashboard';
 import GenerateQuiz from './components/GenerateQuiz';
 import LandingPage from './components/LandingPage';
+import TakeQuiz from './components/TakeQuiz';
 import QuizQuestion from './components/QuizQuestion';
 import QuizHistory from './components/QuizHistory';
 import QuizPage from './components/QuizPage';
@@ -118,3 +119,4 @@ const App = () => {
 };
 
 export default App;
+
