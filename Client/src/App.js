@@ -69,6 +69,10 @@ const App = () => {
             element={user ? <GenerateQuiz user={user} setUser={setUser} /> : <Navigate to="/login" />}
           />
           <Route
+            path="/quiz/:quizId"
+            element={user ? <TakeQuiz user={user} setUser={setUser} /> : <Navigate to="/login" />}
+          />
+          <Route
             path="/quiz-mobile"
             element={
               <QuizQuestion
@@ -76,8 +80,12 @@ const App = () => {
                 setUser={setUser}
                 isMobile={true}
                 questionText="What is the command to display the current directory's contents?"
-                options={['cd', 'ls', 'pwd', 'mkdir']}
-                correctAnswer={1}
+                answers={[
+                  { id: 1, letter: 'A', text: 'ls' },
+                  { id: 2, letter: 'B', text: 'cd' },
+                  { id: 3, letter: 'C', text: 'pwd' },
+                  { id: 4, letter: 'D', text: 'mkdir' }
+                ]}
               />
             }
           />
@@ -88,9 +96,13 @@ const App = () => {
                 user={user}
                 setUser={setUser}
                 isMobile={false}
-                questionText="Which Sorting Algorithm has a time complexity of O(n log n)?"
-                options={['Bubble Sort', 'Merge Sort', 'Selection Sort', 'Insertion Sort']}
-                correctAnswer={1}
+                questionText="What is the command to display the current directory's contents?"
+                answers={[
+                  { id: 1, letter: 'A', text: 'ls' },
+                  { id: 2, letter: 'B', text: 'cd' },
+                  { id: 3, letter: 'C', text: 'pwd' },
+                  { id: 4, letter: 'D', text: 'mkdir' }
+                ]}
               />
             }
           />
@@ -98,7 +110,8 @@ const App = () => {
           <Route path="*" element={<Navigate to="/" />} />
           
         </Routes>
-        <NavButtons />
+        {/* Optional: Show nav buttons in development */}
+        {/* <NavButtons /> */}
       </div>
     </Router>
   );
